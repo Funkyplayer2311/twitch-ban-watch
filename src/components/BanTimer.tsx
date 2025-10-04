@@ -5,12 +5,12 @@ import { Trash2, Clock } from "lucide-react";
 
 interface BanTimerProps {
   id: string;
-  channel: string;
+  username: string;
   endTime: Date;
   onRemove: (id: string) => void;
 }
 
-const BanTimer = ({ id, channel, endTime, onRemove }: BanTimerProps) => {
+const BanTimer = ({ id, username, endTime, onRemove }: BanTimerProps) => {
   const [timeLeft, setTimeLeft] = useState<string>("");
   const [isExpired, setIsExpired] = useState(false);
 
@@ -55,7 +55,7 @@ const BanTimer = ({ id, channel, endTime, onRemove }: BanTimerProps) => {
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-3">
             <div className="px-2 py-1 rounded-md bg-primary/10 border border-primary/20">
-              <h3 className="font-bold text-base gradient-text">#{channel}</h3>
+              <h3 className="font-bold text-base gradient-text">@{username}</h3>
             </div>
           </div>
           <div className="flex items-center gap-2 mb-2">

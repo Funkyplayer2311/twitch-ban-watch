@@ -131,7 +131,7 @@ const Index = () => {
                           <BanTimer
                             key={timer.id}
                             id={timer.id}
-                            channel={timer.channel}
+                            username={username}
                             endTime={timer.endTime}
                             onRemove={handleRemoveTimer}
                           />
@@ -152,7 +152,7 @@ const Index = () => {
                           <BanTimer
                             key={timer.id}
                             id={timer.id}
-                            channel={timer.channel}
+                            username={username}
                             endTime={timer.endTime}
                             onRemove={handleRemoveTimer}
                           />
