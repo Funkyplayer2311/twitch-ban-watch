@@ -31,7 +31,7 @@ const UserProfile = ({ username, onUsernameChange }: UserProfileProps) => {
           <div className="flex items-center gap-2">
             <User className="h-5 w-5 text-primary" />
             <Label htmlFor="username" className="text-lg font-semibold">
-              Twitch Username
+              Banned User's Twitch Username
             </Label>
           </div>
           
@@ -39,7 +39,7 @@ const UserProfile = ({ username, onUsernameChange }: UserProfileProps) => {
             <Input
               id="username"
               type="text"
-              placeholder="Enter your Twitch username"
+              placeholder="Enter banned user's Twitch username"
               value={tempUsername}
               onChange={(e) => setTempUsername(e.target.value)}
               className="bg-input border-border focus:ring-primary"
@@ -77,7 +77,7 @@ const UserProfile = ({ username, onUsernameChange }: UserProfileProps) => {
             <User className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <p className="text-sm text-muted-foreground">Twitch Username</p>
+            <p className="text-sm text-muted-foreground">Banned User</p>
             <p className="text-lg font-semibold gradient-text">@{username}</p>
           </div>
         </div>
