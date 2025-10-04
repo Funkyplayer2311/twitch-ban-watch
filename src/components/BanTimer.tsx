@@ -51,9 +51,13 @@ const BanTimer = ({ id, channel, endTime, onRemove }: BanTimerProps) => {
     <Card className={`p-4 transition-all duration-300 hover:scale-105 animate-slide-up ${
       isExpired ? 'card-glow border-success' : 'card-glow border-primary'
     }`}>
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-3">
         <div className="flex-1">
-          <h3 className="font-semibold text-lg gradient-text mb-2">#{channel}</h3>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="px-2 py-1 rounded-md bg-primary/10 border border-primary/20">
+              <h3 className="font-bold text-base gradient-text">#{channel}</h3>
+            </div>
+          </div>
           <div className="flex items-center gap-2 mb-2">
             <Clock className="h-4 w-4 text-muted-foreground" />
             <span className={`font-mono text-sm ${
