@@ -7,6 +7,7 @@ import { Shield, Clock, Zap } from "lucide-react";
 interface BanEntry {
   id: string;
   channel: string;
+  username: string;
   endTime: Date;
 }
 
@@ -48,6 +49,7 @@ const Index = () => {
     const newBanTimer: BanEntry = {
       id: Date.now().toString(),
       channel,
+      username,
       endTime
     };
     
@@ -131,7 +133,7 @@ const Index = () => {
                           <BanTimer
                             key={timer.id}
                             id={timer.id}
-                            username={username}
+                            username={timer.username}
                             endTime={timer.endTime}
                             onRemove={handleRemoveTimer}
                           />
@@ -152,7 +154,7 @@ const Index = () => {
                           <BanTimer
                             key={timer.id}
                             id={timer.id}
-                            username={username}
+                            username={timer.username}
                             endTime={timer.endTime}
                             onRemove={handleRemoveTimer}
                           />
