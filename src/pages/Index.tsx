@@ -1,8 +1,14 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { User } from "@supabase/supabase-js";
 import UserProfile from "@/components/UserProfile";
 import AddChannelForm from "@/components/AddChannelForm";
 import BanTimer from "@/components/BanTimer";
-import { Shield, Clock, Zap } from "lucide-react";
+import ManageCollaborators from "@/components/ManageCollaborators";
+import { Shield, Clock, Zap, LogOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
 
 interface BanEntry {
   id: string;
@@ -12,52 +18,137 @@ interface BanEntry {
 }
 
 const Index = () => {
+  const navigate = useNavigate();
+  const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<{ username: string } | null>(null);
   const [username, setUsername] = useState("");
   const [banTimers, setBanTimers] = useState<BanEntry[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Load data from localStorage on component mount
+  // Check authentication
   useEffect(() => {
-    const savedUsername = localStorage.getItem("twitchUsername");
-    const savedTimers = localStorage.getItem("banTimers");
-    
-    if (savedUsername) {
-      setUsername(savedUsername);
-    }
-    
-    if (savedTimers) {
-      const parsedTimers = JSON.parse(savedTimers).map((timer: any) => ({
-        ...timer,
-        endTime: new Date(timer.endTime)
-      }));
-      setBanTimers(parsedTimers);
-    }
-  }, []);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (!session) {
+        navigate("/auth");
+      }
+    });
 
-  // Save data to localStorage when state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
+      if (!session) {
+        navigate("/auth");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+  // Load user profile
   useEffect(() => {
-    if (username) {
-      localStorage.setItem("twitchUsername", username);
-    }
-  }, [username]);
+    if (!user) return;
 
+    const loadProfile = async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("username")
+        .eq("id", user.id)
+        .single();
+
+      if (data) {
+        setUserProfile(data);
+      }
+    };
+
+    loadProfile();
+  }, [user]);
+
+  // Load ban timers from database
   useEffect(() => {
-    localStorage.setItem("banTimers", JSON.stringify(banTimers));
-  }, [banTimers]);
+    if (!user) return;
 
-  const handleAddChannel = (channel: string, durationInMinutes: number) => {
+    const loadBanTimers = async () => {
+      const { data, error } = await supabase
+        .from("ban_timers")
+        .select("*")
+        .or(`owner_id.eq.${user.id}`);
+
+      if (data) {
+        const formattedTimers = data.map((timer) => ({
+          id: timer.id,
+          channel: timer.channel,
+          username: timer.username,
+          endTime: new Date(timer.end_time),
+        }));
+        setBanTimers(formattedTimers);
+      }
+      setLoading(false);
+    };
+
+    loadBanTimers();
+
+    // Subscribe to realtime changes
+    const channel = supabase
+      .channel("ban_timers_changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "ban_timers",
+        },
+        () => {
+          loadBanTimers();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
+  const handleAddChannel = async (channel: string, durationInMinutes: number) => {
+    if (!user) return;
+
     const endTime = new Date(Date.now() + durationInMinutes * 60 * 1000);
-    const newBanTimer: BanEntry = {
-      id: Date.now().toString(),
+
+    const { error } = await supabase.from("ban_timers").insert({
+      owner_id: user.id,
       channel,
       username,
-      endTime
-    };
-    
-    setBanTimers(prev => [...prev, newBanTimer]);
+      end_time: endTime.toISOString(),
+    });
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add ban timer",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Ban timer added",
+        description: `Added ban for ${username} in #${channel}`,
+      });
+    }
   };
 
-  const handleRemoveTimer = (id: string) => {
-    setBanTimers(prev => prev.filter(timer => timer.id !== id));
+  const handleRemoveTimer = async (id: string) => {
+    const { error } = await supabase.from("ban_timers").delete().eq("id", id);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to remove ban timer",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate("/auth");
   };
 
   // Group bans by channel and sort alphabetically
@@ -71,6 +162,10 @@ const Index = () => {
   }, {} as Record<string, BanEntry[]>);
 
   const sortedChannels = Object.keys(bansByChannel).sort();
+
+  if (loading) {
+    return <div className="min-h-screen bg-background flex items-center justify-center">Loading...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
@@ -87,10 +182,24 @@ const Index = () => {
             Track ban timers for a user across multiple Twitch channels. 
             Organized by channel to see all bans at a glance.
           </p>
+          <div className="flex items-center justify-center gap-4">
+            {userProfile && (
+              <p className="text-sm text-muted-foreground">
+                Logged in as <span className="font-medium">{userProfile.username}</span>
+              </p>
+            )}
+            <Button variant="outline" size="sm" onClick={handleSignOut}>
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign Out
+            </Button>
+          </div>
         </div>
 
         {/* User Profile */}
         <UserProfile username={username} onUsernameChange={setUsername} />
+
+        {/* Manage Collaborators */}
+        <ManageCollaborators />
 
         {/* Add Channel Form */}
         <div className="space-y-4">

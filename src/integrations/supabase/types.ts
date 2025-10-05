@@ -14,16 +14,114 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      ban_list_permissions: {
+        Row: {
+          created_at: string
+          id: string
+          owner_id: string
+          role: Database["public"]["Enums"]["permission_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          owner_id: string
+          role: Database["public"]["Enums"]["permission_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          owner_id?: string
+          role?: Database["public"]["Enums"]["permission_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ban_list_permissions_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ban_list_permissions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ban_timers: {
+        Row: {
+          channel: string
+          created_at: string
+          end_time: string
+          id: string
+          owner_id: string
+          username: string
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          end_time: string
+          id?: string
+          owner_id: string
+          username: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          end_time?: string
+          id?: string
+          owner_id?: string
+          username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ban_timers_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          username?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_ban_list_access: {
+        Args: {
+          _min_role: Database["public"]["Enums"]["permission_role"]
+          _owner_id: string
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      permission_role: "owner" | "editor" | "viewer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +248,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      permission_role: ["owner", "editor", "viewer"],
+    },
   },
 } as const
